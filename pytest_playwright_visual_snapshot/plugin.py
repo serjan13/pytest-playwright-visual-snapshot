@@ -291,9 +291,7 @@ class AssertSnapshot:
 
         # Create a dir where all snapshot test failures will go
         # ex: snapshot_failures/test_file_name/test_name
-        failure_results_dir = (
-                self._snapshot_failures_path / self._current_test_file_path.stem / self._test_name_without_params
-        )
+        failure_results_dir = Path(self._snapshot_failures_path)
 
         # increment counter before any failures are recorded
         self._counter += 1
