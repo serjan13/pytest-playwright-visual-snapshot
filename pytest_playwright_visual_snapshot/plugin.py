@@ -331,6 +331,7 @@ class AssertSnapshot:
             logger.debug(
                 f"Image size mismatch detected: {e}. Continuing with failure generation."
             )
+        failure_results_dir.mkdir(parents=True, exist_ok=True)
 
         actual_path = os.path.join(failure_results_dir, f"actual_{name}")
         diff_path = os.path.join(failure_results_dir, f"diff_{name}")
