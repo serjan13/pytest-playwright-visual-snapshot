@@ -6,6 +6,7 @@ import typing as t
 from io import BytesIO
 from pathlib import Path
 from typing import Any, List, TypeVar, Union
+import allure
 
 import pytest
 from PIL import Image
@@ -291,7 +292,7 @@ class AssertSnapshot:
 
         # Create a dir where all snapshot test failures will go
         # ex: snapshot_failures/test_file_name/test_name
-        failure_results_dir = Path(self._snapshot_failures_path)
+        failure_results_dir = self._snapshot_failures_path
 
         # increment counter before any failures are recorded
         self._counter += 1
@@ -331,11 +332,32 @@ class AssertSnapshot:
                 f"Image size mismatch detected: {e}. Continuing with failure generation."
             )
 
-        # Create new test_results folder
-        failure_results_dir.mkdir(parents=True, exist_ok=True)
-        img_diff.save(f"{failure_results_dir}/diff_{name}")
-        img_a.save(f"{failure_results_dir}/actual_{name}")
-        img_b.save(f"{failure_results_dir}/expected_{name}")
+        actual_path = os.path.join(failure_results_dir, f"actual_{name}")
+        diff_path = os.path.join(failure_results_dir, f"diff_{name}")
+        expected_path = os.path.join(failure_results_dir, f"expected_{name}")
+
+        img_diff.save(diff_path)
+        img_a.save(actual_path)
+        img_b.save(expected_path)
+
+        try:
+            allure.attach.file(
+                actual_path,
+                name=f"actual_{name}",
+                attachment_type=allure.attachment_type.PNG
+            )
+            allure.attach.file(
+                expected_path,
+                name=f"expected_{name}",
+                attachment_type=allure.attachment_type.PNG
+            )
+            allure.attach.file(
+                diff_path,
+                name=f"diff_{name}",
+                attachment_type=allure.attachment_type.PNG
+            )
+        except Exception as e:
+            logger.error(f"Failed to attach visual diffs to Allure: {e}")
 
         # on ci, update the existing screenshots in place so we can download them
         if is_ci_environment():
