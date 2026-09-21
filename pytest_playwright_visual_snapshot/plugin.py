@@ -15,9 +15,11 @@ from playwright.sync_api import Locator
 from playwright.sync_api import Page as SyncPage
 from pytest import Config, FixtureRequest, Parser
 
-logging.basicConfig(
-    level=os.environ.get("LOG_LEVEL", "INFO").upper(),
-)
+log_level = os.environ.get("LOG_LEVEL", "INFO").upper()
+stream_handler = logging.StreamHandler()
+
+stream_handler.setLevel(log_level)
+logging.basicConfig(level=log_level, handlers=[stream_handler])
 
 logger = logging.getLogger(__name__)
 
@@ -331,7 +333,8 @@ class AssertSnapshot:
             logger.debug(
                 f"Image size mismatch detected: {e}. Continuing with failure generation."
             )
-        failure_results_dir.mkdir(parents=True, exist_ok=True)
+
+
 
         actual_path = os.path.join(failure_results_dir, f"actual_{name}")
         diff_path = os.path.join(failure_results_dir, f"diff_{name}")
