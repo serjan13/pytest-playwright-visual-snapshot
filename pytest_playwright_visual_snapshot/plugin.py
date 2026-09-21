@@ -22,6 +22,7 @@ stream_handler.setLevel(log_level)
 logging.basicConfig(level=log_level, handlers=[stream_handler])
 logging.getLogger("httpx").setLevel(logging.WARNING)
 logging.getLogger("PostgreSQL").propagate = False
+logging.getLogger("wait").propagate = False
 
 logger = logging.getLogger(__name__)
 
