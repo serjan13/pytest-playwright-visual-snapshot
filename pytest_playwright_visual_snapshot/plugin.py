@@ -28,6 +28,8 @@ logger = logging.getLogger(__name__)
 
 SNAPSHOT_MESSAGE_PREFIX = "[playwright-visual-snapshot]"
 
+PIXELMATCH_COLOR_THRESHOLD = 0.1
+
 T = TypeVar("T")
 
 
@@ -58,7 +60,7 @@ def is_ci_environment() -> bool:
 def pytest_addoption(parser: Parser) -> None:
     parser.addini(
         "playwright_visual_snapshot_threshold",
-        "Threshold for visual comparison of snapshots",
+        "Allowed fraction of mismatched pixels in a snapshot (0 to 1; 0.2 means 20%)",
         type="string",
         default="0.1",
     )
@@ -211,6 +213,11 @@ class AssertSnapshot:
         )
         assert raw_global_snapshot_threshold
         self._global_snapshot_threshold = float(raw_global_snapshot_threshold)
+        if not 0 <= self._global_snapshot_threshold <= 1:
+            raise pytest.UsageError(
+                "playwright_visual_snapshot_threshold must be between 0 and 1 "
+                "(for example, 0.2 means 20%)"
+            )
 
         self._mask_selectors = (
             _get_option(pytestconfig, "playwright_visual_snapshot_masks", cast=None)
@@ -258,9 +265,13 @@ class AssertSnapshot:
             else:
                 name = f"{self._test_name}.png"
 
-        # Use global threshold if no local threshold provided
-        if not threshold:
+        # Use the global allowed mismatch ratio if no local value was provided.
+        if threshold is None:
             threshold = self._global_snapshot_threshold
+        if not 0 <= threshold <= 1:
+            raise ValueError(
+                "threshold must be between 0 and 1 (for example, 0.2 means 20%)"
+            )
 
         # If page reference is passed, use screenshot
         if isinstance(img_or_page, (Locator, SyncPage)):
@@ -323,9 +334,15 @@ class AssertSnapshot:
         mismatch = 0
         try:
             mismatch = pixelmatch(
-                img_a, img_b, img_diff, threshold=threshold, fail_fast=fail_fast
+                img_a,
+                img_b,
+                img_diff,
+                threshold=PIXELMATCH_COLOR_THRESHOLD,
+                # The complete count is required to compare it with the allowed ratio.
+                fail_fast=False,
             )
-            if mismatch == 0:
+            mismatch_ratio = mismatch / (img_a.width * img_a.height)
+            if mismatch_ratio <= threshold:
                 return
         except ValueError as e:
             # Raised when image sizes differ
