@@ -341,8 +341,8 @@ class AssertSnapshot:
                 # The complete count is required to compare it with the allowed ratio.
                 fail_fast=False,
             )
-            mismatch_ratio = mismatch / (img_a.width * img_a.height)
-            if mismatch_ratio <= threshold:
+            mismatch_ratio = mismatch / (img_a.width * img_a.height) * 100
+            if mismatch_ratio <= threshold * 100:
                 return
         except ValueError as e:
             # Raised when image sizes differ
