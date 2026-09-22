@@ -353,6 +353,7 @@ class AssertSnapshot:
             logger.debug(
                 f"Image size mismatch detected: {e}. Continuing with failure generation."
             )
+        failure_results_dir.mkdir(parents=True, exist_ok=True)
 
 
 
